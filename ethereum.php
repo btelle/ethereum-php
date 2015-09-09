@@ -21,6 +21,17 @@ class Ethereum extends JSON_RPC
 		}
 	}
 	
+	private function decode_hex($input)
+	{
+		if(substr($input, 0, 2) == '0x')
+			$input = substr($input, 2);
+		
+		if(preg_match('/[a-f0-9]+/', $input))
+			return hexdec($input);
+			
+		return $input;
+	}
+	
 	function web3_clientVersion()
 	{
 		return $this->ether_request(__FUNCTION__);
@@ -76,14 +87,24 @@ class Ethereum extends JSON_RPC
 		return $this->ether_request(__FUNCTION__);
 	}
 	
-	function eth_blockNumber()
+	function eth_blockNumber($decode_hex=FALSE)
 	{
-		return $this->ether_request(__FUNCTION__);
+		$block = $this->ether_request(__FUNCTION__);
+		
+		if($decode_hex)
+			$block = $this->decode_hex($block);
+		
+		return $block;
 	}
 	
-	function eth_getBalance($address, $block='latest')
+	function eth_getBalance($address, $block='latest', $decode_hex=FALSE)
 	{
-		return $this->ether_request(__FUNCTION__, array($address, $block));
+		$balance = $this->ether_request(__FUNCTION__, array($address, $block));
+		
+		if($decode_hex)
+			$balance = $this->decode_hex($balance);
+		
+		return $balance;
 	}
 	
 	function eth_getStorageAt($address, $at, $block='latest')
@@ -106,7 +127,7 @@ class Ethereum extends JSON_RPC
 		return $this->ether_request(__FUNCTION__, array($tx));
 	}
 	
-	function eth_eth_getUncleCountByBlockHash($block_hash)
+	function eth_getUncleCountByBlockHash($block_hash)
 	{
 		return $this->ether_request(__FUNCTION__, array($block_hash));
 	}
@@ -128,14 +149,167 @@ class Ethereum extends JSON_RPC
 	
 	function eth_sendTransaction($transaction)
 	{
-		if(!is_a($transaction, 'Ethereum_Transaction')
+		if(!is_a($transaction, 'Ethereum_Transaction'))
 		{
 			throw new ErrorException('Transaction object expected');
 		}
 		else
 		{
-			return $this->ether_request(__FUNCTION__, $transaction->to_param_array());	
+			return $this->ether_request(__FUNCTION__, $transaction->toArray());	
 		}
+	}
+	
+	function eth_call($message, $block)
+	{
+		if(!is_a($message, 'Ethereum_Message'))
+		{
+			throw new ErrorException('Message object expected');
+		}
+		else
+		{
+			return $this->ether_request(__FUNCTION__, $message->toArray());
+		}
+	}
+	
+	function eth_estimateGas($message, $block)
+	{
+		if(!is_a($message, 'Ethereum_Message'))
+		{
+			throw new ErrorException('Message object expected');
+		}
+		else
+		{
+			return $this->ether_request(__FUNCTION__, $message->toArray());
+		}
+	}
+	
+	function eth_getBlockByHash($hash, $full_tx=TRUE)
+	{
+		return $this->ether_request(__FUNCTION__, array($hash, $full_tx));
+	}
+	
+	function eth_getBlockByNumber($block='latest', $full_tx=TRUE)
+	{
+		return $this->ether_request(__FUNCTION__, array($block, $full_tx));
+	}
+	
+	function eth_getTransactionByHash($hash)
+	{
+		return $this->ether_request(__FUNCTION__, array($hash));
+	}
+	
+	function eth_getTransactionByBlockHashAndIndex($hash, $index)
+	{
+		return $this->ether_request(__FUNCTION__, array($hash, $index));
+	}
+	
+	function eth_getTransactionByBlockNumberAndIndex($block, $index)
+	{
+		return $this->ether_request(__FUNCTION__, array($block, $index));
+	}
+	
+	function eth_getTransactionReceipt($tx_hash)
+	{
+		return $this->ether_request(__FUNCTION__, array($tx_hash));
+	}
+	
+	function eth_getUncleByBlockHashAndIndex($hash, $index)
+	{
+		return $this->ether_request(__FUNCTION__, array($hash, $index));
+	}
+	
+	function eth_getUncleByBlockNumberAndIndex($block, $index)
+	{
+		return $this->ether_request(__FUNCTION__, array($block, $index));
+	}
+	
+	function eth_getCompilers()
+	{
+		return $this->ether_request(__FUNCTION__);
+	}
+	
+	function eth_compileSolidity($code)
+	{
+		return $this->ether_request(__FUNCTION__, array($code));
+	}
+	
+	function eth_compileLLL($code)
+	{
+		return $this->ether_request(__FUNCTION__, array($code));
+	}
+	
+	function eth_compileSerpent($code)
+	{
+		return $this->ether_request(__FUNCTION__, array($code));
+	}
+	
+	function eth_newFilter($filter, $decode_hex=FALSE)
+	{
+		if(!is_a($filter, 'Ethereum_Filter'))
+		{
+			throw new ErrorException('Expected a Filter object');
+		}
+		else
+		{
+			$id = $this->ether_request(__FUNCTION__, $filter->toArray());
+			
+			if($decode_hex)
+				$id = $this->decode_hex($id);
+			
+			return $id;
+		}
+	}
+	
+	function eth_newBlockFilter($decode_hex=FALSE)
+	{
+		$id = $this->ether_request(__FUNCTION__);
+		
+		if($decode_hex)
+			$id = $this->decode_hex($id);
+		
+		return $id;
+	}
+	
+	function eth_newPendingTransactionFilter($decode_hex=FALSE)
+	{
+		$id = $this->ether_request(__FUNCTION__);
+		
+		if($decode_hex)
+			$id = $this->decode_hex($id);
+		
+		return $id;
+	}
+	
+	function eth_uninstallFilter($id)
+	{
+		return $this->ether_request(__FUNCTION__, array($id));
+	}
+	
+	function eth_getFilterChanges($id)
+	{
+		return $this->ether_request(__FUNCTION__, array($id));
+	}
+	
+	function eth_getFilterLogs($id)
+	{
+		return $this->ether_request(__FUNCTION__, array($id));
+	}
+	
+	function eth_getLogs($filter)
+	{
+		if(!is_a($filter, 'Ethereum_Filter'))
+		{
+			throw new ErrorException('Expected a Filter object');
+		}
+		else
+		{
+			return $this->ether_request(__FUNCTION__, $filter->toArray());
+		}
+	}
+	
+	function eth_getWork()
+	{
+		return $this->ether_request(__FUNCTION__);
 	}
 }
 
@@ -154,7 +328,7 @@ class Ethereum_Transaction
 		$this->nonce = $nonce;
 	}
 	
-	function to_param_array()
+	function toArray()
 	{
 		return array(
 			array
@@ -166,6 +340,37 @@ class Ethereum_Transaction
 				'value'=>$this->value,
 				'data'=>$this->data,
 				'nonce'=>$this->nonce
+			)
+		);
+	}
+}
+
+class Ethereum_Message extends Ethereum_Transaction
+{
+
+}
+
+class Ethereum_Filter
+{
+	private $fromBlock, $toBlock, $address, $topics;
+	
+	function __construct($fromBlock, $toBlock, $address, $topics)
+	{
+		$this->fromBlock = $fromBlock;
+		$this->toBlock = $toBlock;
+		$this->address = $address;
+		$this->topics = $topics;
+	}
+	
+	function toArray()
+	{
+		return array(
+			array
+			(
+				'fromBlock'=>$this->fromBlock,
+				'toBlock'=>$this->toBlock,
+				'address'=>$this->address,
+				'topics'=>$this->topics
 			)
 		);
 	}
