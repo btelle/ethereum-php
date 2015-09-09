@@ -311,8 +311,83 @@ class Ethereum extends JSON_RPC
 	{
 		return $this->ether_request(__FUNCTION__);
 	}
+	
+	function eth_submitWork($nonce, $pow_hash, $mix_digest)
+	{
+		return $this->ether_request(__FUNCTION__, array($nonce, $pow_hash, $mix_digest));
+	}
+	
+	function db_putString($db, $key, $value)
+	{
+		return $this->ether_request(__FUNCTION__, array($db, $key, $value));
+	}
+	
+	function db_getString($db, $key)
+	{
+		return $this->ether_request(__FUNCTION__, array($db, $key));
+	}
+	
+	function db_putHex($db, $key, $value)
+	{
+		return $this->ether_request(__FUNCTION__, array($db, $key, $value));
+	}
+	
+	function db_getHex($db, $key)
+	{
+		return $this->ether_request(__FUNCTION__, array($db, $key));
+	}
+	
+	function shh_version()
+	{
+		return $this->ether_request(__FUNCTION__);
+	}
+	
+	function shh_post($post)
+	{
+		if(!is_a($post, 'Whisper_Post'))
+		{
+			throw new ErrorException('Expected a Whisper post');
+		}
+		else
+		{
+			return $this->ether_request(__FUNCTION__, $post->toArray());
+		}
+	}
+	
+	function shh_newIdentinty()
+	{
+		return $this->ether_request(__FUNCTION__);
+	}
+	
+	function shh_hasIdentity($id)
+	{
+		return $this->ether_request(__FUNCTION__);
+	}
+	
+	function shh_newFilter($to=NULL, $topics=array())
+	{
+		return $this->ether_request(__FUNCTION__, array(array('to'=>$to, 'topics'=>$topics)));
+	}
+	
+	function shh_uninstallFilter($id)
+	{
+		return $this->ether_request(__FUNCTION__, array($id));
+	}
+	
+	function shh_getFilterChanges($id)
+	{
+		return $this->ether_request(__FUNCTION__, array($id));
+	}
+	
+	function shh_getMessages($id)
+	{
+		return $this->ether_request(__FUNCTION__, array($id));
+	}
 }
 
+/**
+ *	Ethereum transaction object
+ */
 class Ethereum_Transaction
 {
 	private $to, $from, $gas, $gasPrice, $value, $data, $nonce;
@@ -345,11 +420,18 @@ class Ethereum_Transaction
 	}
 }
 
+/**
+ *	Ethereum message -- Same as a transaction, except using this won't
+ *  post the transaction to the blockchain.
+ */
 class Ethereum_Message extends Ethereum_Transaction
 {
 
 }
 
+/**
+ *	Ethereum transaction filter object
+ */
 class Ethereum_Filter
 {
 	private $fromBlock, $toBlock, $address, $topics;
@@ -371,6 +453,39 @@ class Ethereum_Filter
 				'toBlock'=>$this->toBlock,
 				'address'=>$this->address,
 				'topics'=>$this->topics
+			)
+		);
+	}
+}
+
+/**
+ * 	Ethereum whisper post object
+ */
+class Whisper_Post
+{
+	private $from, $to, $topics, $payload, $priority, $ttl;
+	
+	function __construct($from, $to, $topics, $payload, $priority, $ttl)
+	{
+		$this->from = $from;
+		$this->to = $to;
+		$this->topics = $topics;
+		$this->payload = $payload;
+		$this->priority = $priority;
+		$this->ttl = $ttl;
+	}
+	
+	function toArray()
+	{
+		return array(
+			array
+			(
+				'from'=>$this->from,
+				'to'=>$this->to,
+				'topics'=>$this->topics,
+				'payload'=>$this->payload,
+				'priority'=>$this->priority,
+				'ttl'=>$this->ttl
 			)
 		);
 	}
