@@ -4,14 +4,14 @@ ini_set('display_startup_errors',1);
 error_reporting(E_ALL);
 require_once('../ethereum.php');
 
+/**
+ * Test suite for the ethereum-php.
+ * Make sure you have created an account before running or you will get TONS OF ERRORS
+ */
 
 /*
 $eth = new Ethereum('127.0.0.1', 8545);
 
-echo ($eth->eth_mining()===TRUE?'True':'False').'<br>';
-echo $eth->eth_hashrate().'<br>';
-echo $eth->eth_gasPrice().'<br>';
-print_r($eth->eth_accounts()); echo '<br>';
 echo $eth->eth_blockNumber(TRUE).'<br>';
 echo $eth->eth_getBalance('0xc5b9331c79c5784b83ba118acc7c0827ea3b26cf', 'latest', TRUE).'<br>';
 echo $eth->eth_getStorageAt('0xc5b9331c79c5784b83ba118acc7c0827ea3b26cf', '0x0', '0x2').'<br>';
@@ -85,10 +85,63 @@ class TestNetFunctions extends TestBase
 
 class TestEthereumFunctions extends TestBase
 {
+	private $account;
+	
 	function __construct()
 	{
 		echo '<div><strong>Running '.__CLASS__.'</strong></div>';
 		parent::__construct();
+	}
+	
+	function CreateEthereum()
+	{
+		$this->eth = new Ethereum('127.0.0.1', 8545);
+		$this->assertIsA($this->eth, 'Ethereum');
+	}
+	
+	function IsMining()
+	{
+		$mining = $this->eth->eth_mining();
+		$this->assertIsBoolean($mining);
+		$this->assertEqual($mining, TRUE);
+	}
+	
+	function HashRate()
+	{
+		$this->assertIsHex($this->eth->eth_hashrate());
+	}
+	
+	function GasPrice()
+	{
+		$price = $this->eth->eth_gasPrice();
+		$this->assertIsHex($price);
+		
+		// I assume gas will never be free?
+		$this->assertNotEqual($price, '0x0');	
+	}
+	
+	function Accounts()
+	{
+		$accounts = $this->eth->eth_accounts();
+		
+		$this->assertIsArray($accounts);
+		$this->assertNotEqual(count($accounts), 0);
+		$this->assertIsHex($accounts[0]);
+		$this->assertLength($accounts[0], 42);
+		
+		// Save this account for later
+		$this->account = $accounts[0];
+	}
+	
+	function BlockNumber()
+	{
+		$blkNum = $this->eth->eth_blockNumber(TRUE);
+		$blkHex = $this->eth->eth_blockNumber();
+		
+		$this->assertIsNumeric($blkNum);
+		$this->assertNotEqual($blkNum, 0);
+		$this->assertIsHex($blkHex);
+		$this->assertEqual($blkHex, '0x'.dechex($blkNum));
 	}
 }
 
@@ -199,6 +252,26 @@ class TestBase
 		if(!preg_match('/[0-9a-fx]+/', $a))
 		{
 			trigger_error("$a is not hex", E_USER_ERROR);
+		}
+	}
+	
+	function assertIsBoolean($a)
+	{
+		$this->test_count++;
+		
+		if(!is_bool($a))
+		{
+			trigger_error("$a is not boolean", E_USER_ERROR);
+		}
+	}
+	
+	function assertIsArray($a)
+	{
+		$this->test_count++;
+		
+		if(!is_array($a))
+		{
+			trigger_error("$a is not an array", E_USER_ERROR);
 		}
 	}
 	
