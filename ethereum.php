@@ -2,6 +2,9 @@
 
 /**
  * Ethereum JSON-RPC interface
+ *
+ * See Ethereum API documentation for more information:
+ * http://ethereum.gitbooks.io/frontier-guide/content/rpc.html
  */
 
 require_once(dirname(__FILE__).'/json-rpc.php');
@@ -112,9 +115,14 @@ class Ethereum extends JSON_RPC
 		return $this->ether_request(__FUNCTION__, array($address, $at, $block));
 	}
 	
-	function eth_getTransactionCount($address, $block='latest')
+	function eth_getTransactionCount($address, $block='latest', $decode_hex=FALSE)
 	{
-		return $this->ether_request(__FUNCTION__, array($address, $block));
+		$count = $this->ether_request(__FUNCTION__, array($address, $block));
+        
+        if($decode_hex)
+            $count = $this->decode_hex($count);
+            
+        return $count;   
 	}
 	
 	function eth_getBlockTransactionCountByHash($tx_hash)

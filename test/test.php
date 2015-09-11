@@ -12,8 +12,6 @@ require_once('../ethereum.php');
 /*
 $eth = new Ethereum('127.0.0.1', 8545);
 
-echo $eth->eth_blockNumber(TRUE).'<br>';
-echo $eth->eth_getBalance('0xc5b9331c79c5784b83ba118acc7c0827ea3b26cf', 'latest', TRUE).'<br>';
 echo $eth->eth_getStorageAt('0xc5b9331c79c5784b83ba118acc7c0827ea3b26cf', '0x0', '0x2').'<br>';
 echo $eth->eth_getTransactionCount('0xc5b9331c79c5784b83ba118acc7c0827ea3b26cf').'<br>';
 var_dump($eth->eth_getBlockTransactionCountByHash('0xb903239f8543d04b5dc1ba6579132b143087c68db1b2168786408fcbce568238')); echo '<br>';
@@ -103,7 +101,6 @@ class TestEthereumFunctions extends TestBase
 	{
 		$mining = $this->eth->eth_mining();
 		$this->assertIsBoolean($mining);
-		$this->assertEqual($mining, TRUE);
 	}
 	
 	function HashRate()
@@ -143,6 +140,117 @@ class TestEthereumFunctions extends TestBase
 		$this->assertIsHex($blkHex);
 		$this->assertEqual($blkHex, '0x'.dechex($blkNum));
 	}
+	
+	function AccountBalance()
+	{
+		$balHex = $this->eth->eth_getBalance($this->account, 'latest');
+		$balNum = $this->eth->eth_getBalance($this->account, 'latest', TRUE);
+		
+		$this->assertIsNumeric($balNum);
+		$this->assertIsHex($balHex);
+		$this->assertEqual($balHex, '0x'.dechex($balNum));
+	}
+	
+	function AccountStorage()
+	{
+		$stor = $this->eth->eth_getStorageAt($this->account, '0x0', '0x1');
+		
+		$this->assertIsHex($stor);
+	}
+    
+    function AddressTransactionCount()
+    {
+        $countHex = $this->eth->eth_getTransactionCount($this->account, 'latest');
+        $countNum = $this->eth->eth_getTransactionCount($this->account, 'latest', TRUE);
+        
+        $this->assertIsNumeric($countNum);
+		$this->assertIsHex($countHex);
+		$this->assertEqual($countHex, '0x'.dechex($countNum));
+    }
+    
+    function GetBlocks()
+    {
+        $block = $this->eth->eth_getBlockByNumber('latest');
+        $blockByHash = $this->eth->eth_getBlockByHash($block->hash);
+        
+        $this->assertIsA($block, 'stdClass');
+        $this->assertIsA($blockByHash, 'stdClass');
+        $this->assertEqual($block->hash, $blockByHash->hash);
+        
+        $txCountByHash = $this->eth->eth_getBlockTransactionCountByHash($block->hash);
+        $txCountByNum = $this->eth->eth_getBlockTransactionCountByNumber($block->number);
+        
+        $this->assertIsHex($txCountByHash);
+        $this->assertIsHex($txCountByNum);
+        $this->assertEqual($txCountByHash, $txCountByNum);
+        $this->assertEqual($txCountByHash, '0x'.dechex(count($block->transactions)));
+        
+        $uncleCountByHash = $this->eth->eth_getUncleCountByBlockHash($block->hash);
+        $uncleCountByNum = $this->eth->eth_getUncleCountByBlockNumber($block->number);
+        
+        $this->assertIsHex($uncleCountByHash);
+        $this->assertIsHex($uncleCountByNum);
+        $this->assertEqual($uncleCountByHash, $uncleCountByNum);
+        $this->assertEqual($uncleCountByHash, '0x'.dechex(count($block->uncles)));
+    }
+    
+    function GetTransactions()
+    {
+    	// Get a recent block with some transactions
+    	$blockNum = $this->eth->eth_blockNumber(TRUE);
+    	do
+    	{
+    		$block = $this->eth->eth_getBlockByNumber('0x'.dechex(--$blockNum));
+    	}
+    	while(count($block->transactions) == 0);
+    	
+    	$tx = $block->transactions[0];
+    	
+    	$this->assertIsA($tx, 'stdClass');
+    	$this->assertIsHex($tx->hash);
+    	
+    	$txByBlock = $this->eth->eth_getTransactionByBlockHashAndIndex($block->hash, '0x0');
+    	
+    	$this->assertIsA($txByBlock, 'stdClass');
+    	$this->assertIsHex($txByBlock->hash);
+    	$this->assertEqual($tx->hash, $txByBlock->hash);
+    	
+    	$txByHash = $this->eth->eth_getTransactionByHash($tx->hash);
+    	
+    	$this->assertIsA($txByHash, 'stdClass');
+    	$this->assertIsHex($txByHash->hash);
+    	$this->assertEqual($tx->hash, $txByHash->hash);
+    	
+    	$receipt = $this->eth->eth_getTransactionReceipt($tx->hash);
+    	$this->assertIsA($receipt, 'stdClass');
+    	$this->assertEqual($receipt->blockHash, $block->hash);
+    	$this->assertEqual($receipt->blockNumber, '0x'.dechex($blockNum));
+    }
+    
+    function DoTransaction()
+    {
+    	// TODO: Test sending transactions. This requires mining, working on it.
+    }
+    
+    function SendMessage()
+    {
+    	// TODO: Message tests
+    }
+    
+    function Compilers()
+    {
+    	// TODO: Compiler tests
+    }
+    
+    function Filters()
+    {
+    	// TODO: Filter tests
+    }
+    
+    function DB()
+    {
+    	// TODO: DB Tests
+    }
 }
 
 class TestWhisperFunctions extends TestBase
@@ -151,6 +259,27 @@ class TestWhisperFunctions extends TestBase
 	{
 		echo '<div><strong>Running '.__CLASS__.'</strong></div>';
 		parent::__construct();
+	}
+	
+	function CreateEthereum()
+	{
+		$this->eth = new Ethereum('127.0.0.1', 8545);
+		$this->assertIsA($this->eth, 'Ethereum');
+	}
+	
+	function Version()
+	{
+		$this->assertIsNumeric($this->eth->shh_version());
+	}
+	
+	function Post()
+	{
+		// TODO: Whisper post tests
+	}
+	
+	function Filter()
+	{
+		// TODO: Whisper filter tests
 	}
 }
 
@@ -171,7 +300,14 @@ class TestBase
 		{
 			if($m !== 'run' && $m !== '__construct' && $m != 'errorHandler' && !strstr($m, 'assert'))
 			{
-				$this->$m();
+				try
+				{
+					$this->$m();
+				}
+				catch(Exception $e)
+				{
+					trigger_error('Uncaught exception: '.$e->getMessage(), E_USER_ERROR);
+				}
 			}
 		}
 		
@@ -211,7 +347,7 @@ class TestBase
 		
 		if(!is_a($a, $type))
 		{
-			trigger_error("$a is not $type", E_USER_ERROR);
+			trigger_error("Object is not $type", E_USER_ERROR);
 		}
 	}
 	
@@ -261,7 +397,7 @@ class TestBase
 		
 		if(!is_bool($a))
 		{
-			trigger_error("$a is not boolean", E_USER_ERROR);
+			trigger_error("Object is not boolean", E_USER_ERROR);
 		}
 	}
 	
@@ -271,7 +407,7 @@ class TestBase
 		
 		if(!is_array($a))
 		{
-			trigger_error("$a is not an array", E_USER_ERROR);
+			trigger_error("Object is not an array", E_USER_ERROR);
 		}
 	}
 	
@@ -281,9 +417,21 @@ class TestBase
 		trigger_error($message, E_USER_ERROR);
 	}
 	
-	function errorHandler($errorNumber, $message)
+	function errorHandler($errorNumber, $message, $file, $line, $context)
 	{
-		echo '<div style="background-color: #FF0000;"><strong>Error:</strong> <code>'.$message.'</code></div>';
+        $additional = 'on line '.$line;
+        
+        $trace = array_reverse(debug_backtrace());
+        array_pop($trace);
+        if(isset($trace[3]) && isset($trace[4]))
+        {
+            $class = $trace[3]['class'];
+            $function = $trace[3]['function'];
+            $line = $trace[4]['line'];
+            $additional = 'in <code>'.$class.'.'.$function.'()</code> on line '.$line;
+        }
+        
+		echo '<div style="background-color: #FF0000;"><strong>Error:</strong> <code>'.$message.'</code> '.$additional.'</div>';
 		$this->error_count++;
 	}
 }
