@@ -9,24 +9,6 @@ require_once('../ethereum.php');
  * Make sure you have created an account before running or you will get TONS OF ERRORS
  */
 
-/*
-$eth = new Ethereum('127.0.0.1', 8545);
-
-echo $eth->eth_getStorageAt('0xc5b9331c79c5784b83ba118acc7c0827ea3b26cf', '0x0', '0x2').'<br>';
-echo $eth->eth_getTransactionCount('0xc5b9331c79c5784b83ba118acc7c0827ea3b26cf').'<br>';
-var_dump($eth->eth_getBlockTransactionCountByHash('0xb903239f8543d04b5dc1ba6579132b143087c68db1b2168786408fcbce568238')); echo '<br>';
-echo $eth->eth_getBlockTransactionCountByNumber().'<br>';
-var_dump($eth->eth_getUncleCountByBlockHash('0xb903239f8543d04b5dc1ba6579132b143087c68db1b2168786408fcbce568238')); echo '<br>';
-echo $eth->eth_getUncleCountByBlockNumber().'<br>';
-echo $eth->eth_getCode('0x7011f3edc7fa43c81440f9f43a6458174113b162').'<br>';
-try {
-echo $eth->eth_sign('0xc5b9331c79c5784b83ba118acc7c0827ea3b26cf', 'hi').'<br>';
-} catch(RPCException $e) {
-echo "Oh gawd an exception";
-}
-var_dump($eth->eth_getCompilers()); echo '<br>';
-*/
-
 class TestNetFunctions extends TestBase
 {
 	private $eth;
@@ -157,100 +139,100 @@ class TestEthereumFunctions extends TestBase
 		
 		$this->assertIsHex($stor);
 	}
-    
-    function AddressTransactionCount()
-    {
-        $countHex = $this->eth->eth_getTransactionCount($this->account, 'latest');
-        $countNum = $this->eth->eth_getTransactionCount($this->account, 'latest', TRUE);
-        
-        $this->assertIsNumeric($countNum);
+	
+	function AddressTransactionCount()
+	{
+		$countHex = $this->eth->eth_getTransactionCount($this->account, 'latest');
+		$countNum = $this->eth->eth_getTransactionCount($this->account, 'latest', TRUE);
+		
+		$this->assertIsNumeric($countNum);
 		$this->assertIsHex($countHex);
 		$this->assertEqual($countHex, '0x'.dechex($countNum));
-    }
-    
-    function GetBlocks()
-    {
-        $block = $this->eth->eth_getBlockByNumber('latest');
-        $blockByHash = $this->eth->eth_getBlockByHash($block->hash);
-        
-        $this->assertIsA($block, 'stdClass');
-        $this->assertIsA($blockByHash, 'stdClass');
-        $this->assertEqual($block->hash, $blockByHash->hash);
-        
-        $txCountByHash = $this->eth->eth_getBlockTransactionCountByHash($block->hash);
-        $txCountByNum = $this->eth->eth_getBlockTransactionCountByNumber($block->number);
-        
-        $this->assertIsHex($txCountByHash);
-        $this->assertIsHex($txCountByNum);
-        $this->assertEqual($txCountByHash, $txCountByNum);
-        $this->assertEqual($txCountByHash, '0x'.dechex(count($block->transactions)));
-        
-        $uncleCountByHash = $this->eth->eth_getUncleCountByBlockHash($block->hash);
-        $uncleCountByNum = $this->eth->eth_getUncleCountByBlockNumber($block->number);
-        
-        $this->assertIsHex($uncleCountByHash);
-        $this->assertIsHex($uncleCountByNum);
-        $this->assertEqual($uncleCountByHash, $uncleCountByNum);
-        $this->assertEqual($uncleCountByHash, '0x'.dechex(count($block->uncles)));
-    }
-    
-    function GetTransactions()
-    {
-    	// Get a recent block with some transactions
-    	$blockNum = $this->eth->eth_blockNumber(TRUE);
-    	do
-    	{
-    		$block = $this->eth->eth_getBlockByNumber('0x'.dechex(--$blockNum));
-    	}
-    	while(count($block->transactions) == 0);
-    	
-    	$tx = $block->transactions[0];
-    	
-    	$this->assertIsA($tx, 'stdClass');
-    	$this->assertIsHex($tx->hash);
-    	
-    	$txByBlock = $this->eth->eth_getTransactionByBlockHashAndIndex($block->hash, '0x0');
-    	
-    	$this->assertIsA($txByBlock, 'stdClass');
-    	$this->assertIsHex($txByBlock->hash);
-    	$this->assertEqual($tx->hash, $txByBlock->hash);
-    	
-    	$txByHash = $this->eth->eth_getTransactionByHash($tx->hash);
-    	
-    	$this->assertIsA($txByHash, 'stdClass');
-    	$this->assertIsHex($txByHash->hash);
-    	$this->assertEqual($tx->hash, $txByHash->hash);
-    	
-    	$receipt = $this->eth->eth_getTransactionReceipt($tx->hash);
-    	$this->assertIsA($receipt, 'stdClass');
-    	$this->assertEqual($receipt->blockHash, $block->hash);
-    	$this->assertEqual($receipt->blockNumber, '0x'.dechex($blockNum));
-    }
-    
-    function DoTransaction()
-    {
-    	// TODO: Test sending transactions. This requires mining, working on it.
-    }
-    
-    function SendMessage()
-    {
-    	// TODO: Message tests
-    }
-    
-    function Compilers()
-    {
-    	// TODO: Compiler tests
-    }
-    
-    function Filters()
-    {
-    	// TODO: Filter tests
-    }
-    
-    function DB()
-    {
-    	// TODO: DB Tests
-    }
+	}
+	
+	function GetBlocks()
+	{
+		$block = $this->eth->eth_getBlockByNumber('latest');
+		$blockByHash = $this->eth->eth_getBlockByHash($block->hash);
+		
+		$this->assertIsA($block, 'stdClass');
+		$this->assertIsA($blockByHash, 'stdClass');
+		$this->assertEqual($block->hash, $blockByHash->hash);
+		
+		$txCountByHash = $this->eth->eth_getBlockTransactionCountByHash($block->hash);
+		$txCountByNum = $this->eth->eth_getBlockTransactionCountByNumber($block->number);
+		
+		$this->assertIsHex($txCountByHash);
+		$this->assertIsHex($txCountByNum);
+		$this->assertEqual($txCountByHash, $txCountByNum);
+		$this->assertEqual($txCountByHash, '0x'.dechex(count($block->transactions)));
+		
+		$uncleCountByHash = $this->eth->eth_getUncleCountByBlockHash($block->hash);
+		$uncleCountByNum = $this->eth->eth_getUncleCountByBlockNumber($block->number);
+		
+		$this->assertIsHex($uncleCountByHash);
+		$this->assertIsHex($uncleCountByNum);
+		$this->assertEqual($uncleCountByHash, $uncleCountByNum);
+		$this->assertEqual($uncleCountByHash, '0x'.dechex(count($block->uncles)));
+	}
+	
+	function GetTransactions()
+	{
+		// Get a recent block with some transactions
+		$blockNum = $this->eth->eth_blockNumber(TRUE);
+		do
+		{
+			$block = $this->eth->eth_getBlockByNumber('0x'.dechex(--$blockNum));
+		}
+		while(count($block->transactions) == 0);
+		
+		$tx = $block->transactions[0];
+		
+		$this->assertIsA($tx, 'stdClass');
+		$this->assertIsHex($tx->hash);
+		
+		$txByBlock = $this->eth->eth_getTransactionByBlockHashAndIndex($block->hash, '0x0');
+		
+		$this->assertIsA($txByBlock, 'stdClass');
+		$this->assertIsHex($txByBlock->hash);
+		$this->assertEqual($tx->hash, $txByBlock->hash);
+		
+		$txByHash = $this->eth->eth_getTransactionByHash($tx->hash);
+		
+		$this->assertIsA($txByHash, 'stdClass');
+		$this->assertIsHex($txByHash->hash);
+		$this->assertEqual($tx->hash, $txByHash->hash);
+		
+		$receipt = $this->eth->eth_getTransactionReceipt($tx->hash);
+		$this->assertIsA($receipt, 'stdClass');
+		$this->assertEqual($receipt->blockHash, $block->hash);
+		$this->assertEqual($receipt->blockNumber, '0x'.dechex($blockNum));
+	}
+	
+	function DoTransaction()
+	{
+		// TODO: Test sending transactions. This requires mining, working on it.
+	}
+	
+	function SendMessage()
+	{
+		// TODO: Message tests
+	}
+	
+	function Compilers()
+	{
+		// TODO: Compiler tests
+	}
+	
+	function Filters()
+	{
+		// TODO: Filter tests
+	}
+	
+	function DB()
+	{
+		// TODO: DB Tests
+	}
 }
 
 class TestWhisperFunctions extends TestBase
@@ -419,18 +401,18 @@ class TestBase
 	
 	function errorHandler($errorNumber, $message, $file, $line, $context)
 	{
-        $additional = 'on line '.$line;
-        
-        $trace = array_reverse(debug_backtrace());
-        array_pop($trace);
-        if(isset($trace[3]) && isset($trace[4]))
-        {
-            $class = $trace[3]['class'];
-            $function = $trace[3]['function'];
-            $line = $trace[4]['line'];
-            $additional = 'in <code>'.$class.'.'.$function.'()</code> on line '.$line;
-        }
-        
+		$additional = 'on line '.$line;
+		
+		$trace = array_reverse(debug_backtrace());
+		array_pop($trace);
+		if(isset($trace[3]) && isset($trace[4]))
+		{
+			$class = $trace[3]['class'];
+			$function = $trace[3]['function'];
+			$line = $trace[4]['line'];
+			$additional = 'in <code>'.$class.'.'.$function.'()</code> on line '.$line;
+		}
+		
 		echo '<div style="background-color: #FF0000;"><strong>Error:</strong> <code>'.$message.'</code> '.$additional.'</div>';
 		$this->error_count++;
 	}
