@@ -498,3 +498,141 @@ class Whisper_Post
 		);
 	}
 }
+
+class Contract
+{
+	
+	protected $eth;
+	protected $address;
+	protected $abi;
+	
+	private $call;
+	private $from;
+
+	function __construct($eth, $address, $abi){
+		$this->eth = $eth;
+		$this->address = $address;
+		$this->abi = json_decode($abi);
+	}
+	
+	function __call($func, $params) {
+		if(isset($this->call)) {
+			// Check if function exists in contract ABI
+			foreach($this->abi as $obj){
+				if(isset($obj->name) && $obj->name == $func) {
+					// Parse inputs if exist
+					if(isset($obj->inputs)) {
+						foreach($obj->inputs as $input) {
+							$inputs[] = $input->type;
+						}
+					}
+					// Parse outputs if exist
+					if(isset($obj->outputs)) {
+						foreach($obj->outputs as $output) {
+							$outputs[] = $output->type;
+						}
+					}
+					// Encode transaction data
+					$method = $func . "(" . (isset($inputs) && count($inputs) > 0 ? implode(",", $inputs) : "") . ")";
+	            	$data = "0x" . $this->contractMethodHash($method);
+	            	if(isset($params) && isset($inputs)) {
+	            		if(count($params) == count($inputs)) {
+		            		foreach($params as $param) {
+		            			$data = $data . $this->encode($param);
+	            			} 
+	            		} else throw new RPCException("Invalid params count passed to $method");
+	            	}
+	            	// Create transaction object
+	            	$transaction = new Ethereum_Message(
+	            		$from = isset($this->from) ? $this->from : $this->eth->eth_coinbase(),
+	            		$to = $this->address,
+	            		$gas = null,
+	            		$gasPrice = null,
+	            		$value = null,
+	            		$data);
+		            if($this->call == "message")
+		            	$response = $this->eth->eth_call($transaction, "latest");
+	            	if($this->call == "transaction")
+		            	$response = $this->eth->eth_sendTransaction($transaction);
+		           // return $response;
+		            
+		            // Decode outputs if exist
+		            if(isset($outputs)) {
+		            	$response = str_split(substr($response, 2), 64);
+		            	foreach($outputs as $output) {
+		            		foreach($response as $obj) {
+		            			if(strpos($output, "int") !== false) {
+		            				$result[] = $this->fromHex($obj);
+		            			}
+		            			if(strpos($output, "address") !== false) {
+		            				$result[] = "0x" . substr($obj, 24);
+		            			}
+		            			if(strpos($output, "bool") !== false) {
+		            				$result[] = is_bool($this->fromHex($obj)) ? $this->fromHex($obj) : "0x" . $obj;
+		            			}
+		            			if(strpos($output, "string") !== false) {
+		            				$result[] = hex2bin($obj);
+		            			}
+		            		}
+		            	}
+		            	return $result;
+		            } else return $response;
+		            
+				}
+	        }
+	    } else throw new RPCException("Call method is not set to \$this->call() or \$this->transact()");
+	}
+	
+	function call($from=null) {
+		$this->call = "message";
+		$this->from = isset($from) ? $from : null;
+		return $this;
+	}
+	
+	function transact($from=null) {
+		$this->call = "transaction";
+		$this->from = isset($from) ? $from : null;
+		return $this;
+	}
+	
+	function toWei($value, $encode_hex=false) {
+		$value = $value * pow(10, 18);
+		if($encode_hex)
+			$value = $this->toHex($value);
+		return $value;
+ 	}
+	
+	function fromWei($value, $decode_hex=false) {
+		if($decode_hex)
+			$value = $this->fromHex($value);
+		$value = $value / pow(10, 18);
+		return $value;
+	}
+	
+	function toHex($input) {
+		if(preg_match('/[0-9]+/', $input))
+			$input = "0x" . dechex($input);
+			return $input;
+	}
+	
+	function fromHex($input) {
+		if(substr($input, 0, 2) == '0x')
+			$input = substr($input, 2);
+		if(preg_match('/[a-f0-9]+/', $input))
+			return hexdec($input);
+	}
+	
+	function contractMethodHash($method) {
+		$hash = $this->eth->web3_sha3("0x" . bin2hex($method));
+		if(preg_match('/[a-f0-9]+/', $hash))
+			return substr($hash, 2, 8);
+	}
+	
+	function encode($input) {
+		if(substr($input, 0, 2) == '0x')
+			return str_pad(substr($input, 2), 64, "0", STR_PAD_LEFT);
+		if(is_numeric($input))
+			return str_pad(dechex($input), 64, "0", STR_PAD_LEFT);
+		
+	}
+}
