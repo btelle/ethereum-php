@@ -13,6 +13,9 @@ require_once(dirname(__FILE__).'/json-rpc.php');
 
 class Ethereum extends JSON_RPC
 {
+	const DO_DECODE_HEX    = true;
+	const NO_DECODE_HEX    = false;
+
 	private function ether_request($method, $params=array())
 	{
 		try 
@@ -26,7 +29,7 @@ class Ethereum extends JSON_RPC
 		}
 	}
 	
-	private function decode_hex($input)
+	public static function decode_hex($input)
 	{
 		if(substr($input, 0, 2) == '0x') {
 			$input = substr($input, 2);
@@ -100,7 +103,7 @@ class Ethereum extends JSON_RPC
 		return $this->ether_request(__FUNCTION__);
 	}
 	
-	function eth_blockNumber($decode_hex=FALSE)
+	function eth_blockNumber($decode_hex=self::NO_DECODE_HEX)
 	{
 		$block = $this->ether_request(__FUNCTION__);
 		
@@ -110,7 +113,7 @@ class Ethereum extends JSON_RPC
 		return $block;
 	}
 	
-	function eth_getBalance($address, $block='latest', $decode_hex=FALSE)
+	function eth_getBalance($address, $block='latest', $decode_hex=self::NO_DECODE_HEX)
 	{
 		$balance = $this->ether_request(__FUNCTION__, array($address, $block));
 		
@@ -125,7 +128,7 @@ class Ethereum extends JSON_RPC
 		return $this->ether_request(__FUNCTION__, array($address, $at, $block));
 	}
 	
-	function eth_getTransactionCount($address, $block='latest', $decode_hex=FALSE)
+	function eth_getTransactionCount($address, $block='latest', $decode_hex=self::NO_DECODE_HEX)
 	{
 		$count = $this->ether_request(__FUNCTION__, array($address, $block));
         
@@ -261,7 +264,7 @@ class Ethereum extends JSON_RPC
 		return $this->ether_request(__FUNCTION__, array($code));
 	}
 	
-	function eth_newFilter($filter, $decode_hex=FALSE)
+	function eth_newFilter($filter, $decode_hex=self::NO_DECODE_HEX)
 	{
 		if(!is_a($filter, 'Ethereum_Filter'))
 		{
@@ -278,7 +281,7 @@ class Ethereum extends JSON_RPC
 		}
 	}
 	
-	function eth_newBlockFilter($decode_hex=FALSE)
+	function eth_newBlockFilter($decode_hex=self::NO_DECODE_HEX)
 	{
 		$id = $this->ether_request(__FUNCTION__);
 		
@@ -288,7 +291,7 @@ class Ethereum extends JSON_RPC
 		return $id;
 	}
 	
-	function eth_newPendingTransactionFilter($decode_hex=FALSE)
+	function eth_newPendingTransactionFilter($decode_hex=self::NO_DECODE_HEX)
 	{
 		$id = $this->ether_request(__FUNCTION__);
 		
