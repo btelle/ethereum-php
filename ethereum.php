@@ -5,6 +5,8 @@
  *
  * See Ethereum API documentation for more information:
  * http://ethereum.gitbooks.io/frontier-guide/content/rpc.html
+ *
+ * >> require: bcmath
  */
 
 require_once(dirname(__FILE__).'/json-rpc.php');
@@ -26,13 +28,21 @@ class Ethereum extends JSON_RPC
 	
 	private function decode_hex($input)
 	{
-		if(substr($input, 0, 2) == '0x')
+		if(substr($input, 0, 2) == '0x') {
 			$input = substr($input, 2);
-		
-		if(preg_match('/[a-f0-9]+/', $input))
-			return hexdec($input);
+		}
+
+		if(!preg_match('/[a-f0-9]+/', $input)) {
+            throw new Exception("invalid hex input");
+        }
 			
-		return $input;
+        $sum = "0";
+        $len = strlen($input);
+        for ($i = 0; $i < $len; $i++) {
+            $c = ord($input{$i}) - ord('0');
+            $sum = bcadd(bcmul($sum, 16), $c);
+        }
+        return $sum;
 	}
 	
 	function web3_clientVersion()
