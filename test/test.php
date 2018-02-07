@@ -42,7 +42,7 @@ class TestNetFunctions extends TestBase
 	
 	function IsListening()
 	{
-		$this->assertEqual($this->eth->net_listening(), TRUE);
+		$this->assertEqual($this->eth->net_listening(), Ethereum::DO_DECODE_HEX);
 	}
 	
 	function HasPeers()
@@ -114,7 +114,7 @@ class TestEthereumFunctions extends TestBase
 	
 	function BlockNumber()
 	{
-		$blkNum = $this->eth->eth_blockNumber(TRUE);
+		$blkNum = $this->eth->eth_blockNumber(Ethereum::DO_DECODE_HEX);
 		$blkHex = $this->eth->eth_blockNumber();
 		
 		$this->assertIsNumeric($blkNum);
@@ -126,7 +126,7 @@ class TestEthereumFunctions extends TestBase
 	function AccountBalance()
 	{
 		$balHex = $this->eth->eth_getBalance($this->account, 'latest');
-		$balNum = $this->eth->eth_getBalance($this->account, 'latest', TRUE);
+		$balNum = $this->eth->eth_getBalance($this->account, 'latest', Ethereum::DO_DECODE_HEX);
 		
 		$this->assertIsNumeric($balNum);
 		$this->assertIsHex($balHex);
@@ -143,7 +143,7 @@ class TestEthereumFunctions extends TestBase
 	function AddressTransactionCount()
 	{
 		$countHex = $this->eth->eth_getTransactionCount($this->account, 'latest');
-		$countNum = $this->eth->eth_getTransactionCount($this->account, 'latest', TRUE);
+		$countNum = $this->eth->eth_getTransactionCount($this->account, 'latest', Ethereum::DO_DECODE_HEX);
 		
 		$this->assertIsNumeric($countNum);
 		$this->assertIsHex($countHex);
@@ -179,7 +179,7 @@ class TestEthereumFunctions extends TestBase
 	function GetTransactions()
 	{
 		// Get a recent block with some transactions
-		$blockNum = $this->eth->eth_blockNumber(TRUE);
+		$blockNum = $this->eth->eth_blockNumber(Ethereum::DO_DECODE_HEX);
 		do
 		{
 			$block = $this->eth->eth_getBlockByNumber('0x'.dechex(--$blockNum));
