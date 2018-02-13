@@ -42,7 +42,7 @@ class Ethereum extends JSON_RPC
         $sum = "0";
         $len = strlen($input);
         for ($i = 0; $i < $len; $i++) {
-            $c = ord($input{$i}) - ord('0');
+            $c = hexdec($input{$i});
             $sum = bcadd(bcmul($sum, 16), $c);
         }
         return $sum;
