@@ -5,12 +5,17 @@
  *
  * See Ethereum API documentation for more information:
  * http://ethereum.gitbooks.io/frontier-guide/content/rpc.html
+ *
+ * >> require: bcmath
  */
 
 require_once(dirname(__FILE__).'/json-rpc.php');
 
 class Ethereum extends JSON_RPC
 {
+	const DO_DECODE_HEX    = true;
+	const NO_DECODE_HEX    = false;
+
 	private function ether_request($method, $params=array())
 	{
 		try 
@@ -24,16 +29,36 @@ class Ethereum extends JSON_RPC
 		}
 	}
 	
-	private function decode_hex($input)
+	public static function decode_hex($input)
 	{
-		if(substr($input, 0, 2) == '0x')
+		if(substr($input, 0, 2) == '0x') {
 			$input = substr($input, 2);
-		
-		if(preg_match('/[a-f0-9]+/', $input))
-			return hexdec($input);
+		}
+
+		if(!preg_match('/[a-f0-9]+/', $input)) {
+            throw new Exception("invalid hex input");
+        }
 			
-		return $input;
+        $sum = "0";
+        $len = strlen($input);
+        for ($i = 0; $i < $len; $i++) {
+            $c = hexdec($input{$i});
+            $sum = bcadd(bcmul($sum, 16), $c);
+        }
+        return $sum;
 	}
+
+    public static function encode_hex($decimal)
+    {
+        $alphabet = '0123456789abcdef';
+        $hex = [];
+        $remain = $decimal;
+        do {
+            $hex[] = $alphabet{bcmod($remain, 16)};
+            $remain = bcdiv($remain, 16);
+        } while (bccomp($remain, 0) > 0);
+        return '0x' . strrev(implode("", $hex));
+    }
 	
 	function web3_clientVersion()
 	{
@@ -90,22 +115,22 @@ class Ethereum extends JSON_RPC
 		return $this->ether_request(__FUNCTION__);
 	}
 	
-	function eth_blockNumber($decode_hex=FALSE)
+	function eth_blockNumber($decode_hex=self::DO_DECODE_HEX)
 	{
 		$block = $this->ether_request(__FUNCTION__);
 		
-		if($decode_hex)
-			$block = $this->decode_hex($block);
+		if($decode_hex == self::DO_DECODE_HEX)
+			$block = self::decode_hex($block);
 		
 		return $block;
 	}
 	
-	function eth_getBalance($address, $block='latest', $decode_hex=FALSE)
+	function eth_getBalance($address, $block='latest', $decode_hex=self::DO_DECODE_HEX)
 	{
 		$balance = $this->ether_request(__FUNCTION__, array($address, $block));
 		
-		if($decode_hex)
-			$balance = $this->decode_hex($balance);
+		if($decode_hex == self::DO_DECODE_HEX)
+			$balance = self::decode_hex($balance);
 		
 		return $balance;
 	}
@@ -115,24 +140,34 @@ class Ethereum extends JSON_RPC
 		return $this->ether_request(__FUNCTION__, array($address, $at, $block));
 	}
 	
-	function eth_getTransactionCount($address, $block='latest', $decode_hex=FALSE)
+	function eth_getTransactionCount($address, $block='latest', $decode_hex=self::DO_DECODE_HEX)
 	{
 		$count = $this->ether_request(__FUNCTION__, array($address, $block));
         
-        if($decode_hex)
-            $count = $this->decode_hex($count);
+        if($decode_hex == self::DO_DECODE_HEX)
+            $count = self::decode_hex($count);
             
         return $count;   
 	}
 	
-	function eth_getBlockTransactionCountByHash($tx_hash)
+	function eth_getBlockTransactionCountByHash($tx_hash, $decode_hex=self::DO_DECODE_HEX)
 	{
-		return $this->ether_request(__FUNCTION__, array($tx_hash));
+		$count = $this->ether_request(__FUNCTION__, array($tx_hash));
+
+        if ($decode_hex == self::DO_DECODE_HEX)
+            $count = self::decode_hex($count);
+
+        return $count;
 	}
 	
-	function eth_getBlockTransactionCountByNumber($tx='latest')
+	function eth_getBlockTransactionCountByNumber($tx='latest', $decode_hex=self::DO_DECODE_HEX)
 	{
-		return $this->ether_request(__FUNCTION__, array($tx));
+		$count = $this->ether_request(__FUNCTION__, array($tx));
+
+        if ($decode_hex == self::DO_DECODE_HEX)
+            $count = self::decode_hex($count);
+
+        return $count;
 	}
 	
 	function eth_getUncleCountByBlockHash($block_hash)
@@ -198,6 +233,9 @@ class Ethereum extends JSON_RPC
 	
 	function eth_getBlockByNumber($block='latest', $full_tx=TRUE)
 	{
+        if (is_numeric($block)) {
+            $block = self::encode_hex($block);
+        }
 		return $this->ether_request(__FUNCTION__, array($block, $full_tx));
 	}
 	
@@ -251,7 +289,7 @@ class Ethereum extends JSON_RPC
 		return $this->ether_request(__FUNCTION__, array($code));
 	}
 	
-	function eth_newFilter($filter, $decode_hex=FALSE)
+	function eth_newFilter($filter, $decode_hex=self::DO_DECODE_HEX)
 	{
 		if(!is_a($filter, 'Ethereum_Filter'))
 		{
@@ -261,29 +299,29 @@ class Ethereum extends JSON_RPC
 		{
 			$id = $this->ether_request(__FUNCTION__, $filter->toArray());
 			
-			if($decode_hex)
-				$id = $this->decode_hex($id);
+			if($decode_hex == self::DO_DECODE_HEX)
+				$id = self::decode_hex($id);
 			
 			return $id;
 		}
 	}
 	
-	function eth_newBlockFilter($decode_hex=FALSE)
+	function eth_newBlockFilter($decode_hex=self::DO_DECODE_HEX)
 	{
 		$id = $this->ether_request(__FUNCTION__);
 		
-		if($decode_hex)
-			$id = $this->decode_hex($id);
+		if($decode_hex == self::DO_DECODE_HEX)
+			$id = self::decode_hex($id);
 		
 		return $id;
 	}
 	
-	function eth_newPendingTransactionFilter($decode_hex=FALSE)
+	function eth_newPendingTransactionFilter($decode_hex=self::DO_DECODE_HEX)
 	{
 		$id = $this->ether_request(__FUNCTION__);
 		
-		if($decode_hex)
-			$id = $this->decode_hex($id);
+		if($decode_hex == self::DO_DECODE_HEX)
+			$id = self::decode_hex($id);
 		
 		return $id;
 	}
