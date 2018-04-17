@@ -187,7 +187,11 @@ class Ethereum extends JSON_RPC
 		}
 		else
 		{
-			return $this->ether_request(__FUNCTION__, $message->toArray());
+			$message_array = $message->toArray();
+			if($block) {
+                            array_push($message_array, $block);
+                        }
+			return $this->ether_request(__FUNCTION__, $message_array);
 		}
 	}
 	
